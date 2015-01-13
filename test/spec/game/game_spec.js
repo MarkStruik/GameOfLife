@@ -6,18 +6,10 @@ describe('Game Module', function(){
     // inject module
     beforeEach(module('Game'));
 
-    var $scope, $controller;
-    beforeEach(inject(function($rootScope, _$controller_){
-      $scope = $rootScope;
-      $controller = _$controller_;
-    }));
-
-
     var gameManager; // instance of the GameManager
-    beforeEach(function(){
-      gameManager = $controller('GameManager', {$scope : $scope});
-    });
-
+    beforeEach(inject(function (GameManager) {
+      gameManager = GameManager;
+    }));
 
     it('should have no items upon creation', function(){
       expect(gameManager.items).toBeUndefined();
@@ -38,11 +30,8 @@ describe('Game Module', function(){
     });
 
     describe('.setValue', function(){
-      beforeEach(function(){
-        gameManager.newGame(4,4);
-      });
-
       it("should setValue on coords", function(){
+        gameManager.newGame(4, 4);
         gameManager.setValue(0,0,1);
         gameManager.setValue(1,1,1);
         gameManager.setValue(2,2,1);
@@ -59,26 +48,75 @@ describe('Game Module', function(){
     });
 
     describe('.tick', function(){
-      describe('Any live cell with fewer than two live neighbours dies, ' +
-      'as if caused by underpopulation.', function(){
-        it('given 1 neighbor it should die', function(){
-          gameManager.newGame(4,4);
-          gameManager.setValue(1,1,1);
+      describe('Any live cell with fewer than two live neighbours dies, as if caused by underpopulation.', function () {
+        beforeEach(function () {
+          gameManager.newGame(3, 3);
+          gameManager.setValue(1, 1, 1);  // check item
+        });
+
+        it('given 0 neighbors it should die', function () {
+          gameManager.tick();
+          expect(gameManager.items[1][1]).toBe(0);
+        })
+
+        it('given 1 neighbors it should die', function () {
+          gameManager.setValue(2, 2, 1);
           gameManager.tick();
           expect(gameManager.items[1][1]).toBe(0);
         })
       });
 
-      it('Any live cell with more than three live neighbours dies, as if by overcrowding.', function(){
+      describe('Any live cell with more than three live neighbours dies, as if by overcrowding.', function () {
+        beforeEach(function () {
+          gameManager.newGame(3, 3);
+        });
 
+        it('given 4 neighbours', function () {
+          gameManager.items =
+            [
+              [1, 1, 0],
+              [1, 1, 0], // test center item
+              [1, 0, 0]
+            ];
+          gameManager.tick();
+          expect(gameManager.items[1][1]).toBe(0);
+        });
       });
 
-      it('Any live cell with two or three live neighbours lives on to the next generation.', function(){
+      describe('Any live cell with two or three live neighbours lives on to the next generation.', function () {
+        beforeEach(function () {
+          gameManager.newGame(3, 3);
+          gameManager.setValue(1, 1, 1);  // check item
+        });
 
+        it('given 2 neighbours', function () {
+          gameManager.setValue(0, 0, 1);
+          gameManager.setValue(1, 0, 1);
+          gameManager.tick();
+          expect(gameManager.items[1][1]).toBe(1);
+        });
+
+        it('given 3 neighbours', function () {
+          gameManager.setValue(0, 0, 1);
+          gameManager.setValue(1, 0, 1);
+          gameManager.setValue(0, 1, 1);
+
+          gameManager.tick();
+          expect(gameManager.items[1][1]).toBe(1);
+        });
       });
 
-      it('Any dead cell with exactly three live neighbours becomes a live cell.', function(){
+      describe('Any dead cell with exactly three live neighbours becomes a live cell.', function () {
+        it('given 3 neighbours', function () {
+          gameManager.newGame(3, 3);
+          gameManager.setValue(1, 1, 0);
+          gameManager.setValue(0, 0, 1);
+          gameManager.setValue(1, 0, 1);
+          gameManager.setValue(0, 1, 1);
 
+          gameManager.tick();
+          expect(gameManager.items[1][1]).toBe(1);
+        });
       });
     });
 
